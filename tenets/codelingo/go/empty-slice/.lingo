@@ -13,5 +13,5 @@ tenets:
         tok: 47 # Specifies that the assignemt is a definition, ie, uses ":=" https://golang.org/pkg/go/token/#DEFINE
         go.rhs:
           go.composite_lit:
-            child_count: 1
+            child_count == 1
             go.array_type
