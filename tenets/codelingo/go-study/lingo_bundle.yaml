@@ -1,0 +1,8 @@
+description: Go concurrency tenets inspired by https://songlh.github.io/paper/go-study.pdf
+version: 0.0.0
+tenets:
+- blocked-send-multi-select
+tags:
+- golang
+- go
+- concurrency

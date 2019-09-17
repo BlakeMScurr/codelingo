@@ -1,0 +1,70 @@
+tenets:
+  - name: blocked-send-multi-select
+    actions:
+      codelingo/review:
+        comment: |
+          The goroutine writing to the {{ channelName }} channel 
+    query: |
+      import codelingo/ast/go
+
+      # There is no 
+      go.func_decl(depth = any):
+        # There is a new unbuffered channel called "channelName"
+        go.asign_stmt(depth = any):
+          go.lhs:
+            go.ident:
+              name as channelName
+          go.rhs:
+            go.call_expr:
+              go.ident:
+                name == "make"
+              go.args:
+                go.chan_type
+                exclude:
+                  go.basic_lit:
+                    kind == "int"
+
+        # The channel is not returned to be read from elsewhere
+        exclude:
+          go.return_stmt:
+            go.ident:
+              name == channelName
+
+        # The channel is read from in a select statement
+        go.select_stmt:
+          start_offset as so
+          go.comm_clause(depth = 2):
+            exclude:
+              go.body:
+                include:
+                  go.ident == channelName
+          # There is another case that may return, leaving our channel unread from and blocking
+          go.comm_clause(depth = 2):
+            go.return_stmt(depth = any)
+            exclude:
+              go.ident(depth = any):
+                name == channelName
+        
+        # There is only one read from the channel
+        exclude:
+          go.select_stmt:
+            start_offset != so
+            go.ident == channelName
+
+        # Any function that the channel is passed into must only accept write only channels
+        exclude:
+          go.call_expr(depth = any):
+            go.args:
+              go.ident:
+                name = channelName
+            edge("calls"):
+              go.func_decl:
+                go.func_type:
+                  go.field_list:
+                    go.field:
+                      go.chan_type:
+                        # dir == 1 means that the channel is write only https://github.com/codelingo/platform/issues/1412
+                        dir != 1
+
+
+
